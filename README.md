@@ -87,24 +87,9 @@ To integrate this server with the desktop app, add the following to your app's s
 {
   "mcpServers": {
     "gtasks": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-gtasks"
-      ]
-    }
-  }
-}
-```
-
-Use while developing locally:
-```json
-{
-  "mcpServers": {
-    "gtasks": {
       "command": "/opt/homebrew/bin/node",
       "args": [
-        "/Users/zachcaceres/mcp/google-tasks/dist/index.js"
+        "{ABSOLUTE PATH TO FILE HERE}/dist/index.js"
       ]
     }
   }

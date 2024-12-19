@@ -31,7 +31,6 @@ const server = new Server(
 );
 
 server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
-  console.log("Listing Resources");
   const [allTasks, nextPageToken] = await TaskResources.list(request, tasks);
   return {
     resources: allTasks.map((task) => ({
@@ -44,7 +43,6 @@ server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
 });
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  console.log("Reading a Resource");
   const task = await TaskResources.read(request, tasks);
 
   const taskDetails = [

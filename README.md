@@ -1,5 +1,7 @@
 # Google Tasks MCP Server
 
+![gtasks mcp logo](./logo.jpg)
+
 This MCP server integrates with Google Tasks to allow listing, reading, searching, creating, updating, and deleting tasks.
 
 ## Components

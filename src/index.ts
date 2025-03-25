@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-import { authenticate } from "@google-cloud/local-auth";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -10,13 +8,26 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import fs from "fs";
-import { google, tasks_v1 } from "googleapis";
-import path from "path";
+import { google } from "googleapis";
 import { TaskActions, TaskResources } from "./Tasks.js";
 
-const tasks = google.tasks("v1");
+function initGoogleTasks() {
+  const accessToken = process.env.GOOGLE_ACCESS_TOKEN;
+  if (!accessToken) {
+    throw new Error("GOOGLE_ACCESS_TOKEN environment variable is required");
+  }
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({
+    access_token: accessToken
+  });
 
+  return google.tasks({
+    version: "v1",
+    auth
+  });
+}
+
+const tasks = initGoogleTasks();
 const server = new Server(
   {
     name: "example-servers/gtasks",
@@ -26,8 +37,8 @@ const server = new Server(
     capabilities: {
       resources: {},
       tools: {},
-    },
-  },
+    }
+  }
 );
 
 server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
@@ -233,46 +244,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   throw new Error("Tool not found");
 });
 
-const credentialsPath = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
-  "../.gtasks-server-credentials.json",
-);
-
-async function authenticateAndSaveCredentials() {
-  console.log("Launching auth flow…");
-  const p = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    "../gcp-oauth.keys.json",
-  );
-
-  console.log(p);
-  const auth = await authenticate({
-    keyfilePath: p,
-    scopes: ["https://www.googleapis.com/auth/tasks"],
-  });
-  fs.writeFileSync(credentialsPath, JSON.stringify(auth.credentials));
-  console.log("Credentials saved. You can now run the server.");
-}
-
-async function loadCredentialsAndRunServer() {
-  if (!fs.existsSync(credentialsPath)) {
-    console.error(
-      "Credentials not found. Please run with 'auth' argument first.",
-    );
+async function runServer() {
+  try {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  } catch (error) {
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
-
-  const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials(credentials);
-  google.options({ auth });
-
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
 }
 
-if (process.argv[2] === "auth") {
-  authenticateAndSaveCredentials().catch(console.error);
-} else {
-  loadCredentialsAndRunServer().catch(console.error);
-}
+runServer();
